@@ -7,14 +7,12 @@ import uuid, requests
 import json
 from typing import List
 from openai import AzureOpenAI
-# from ..base import VannaBase
+from base import VannaBase
 from dotenv import load_dotenv
 import os
 
-AZURE_OPENAI_ENDPOINT = 'https://embedding-openai-alpha.openai.azure.com/'
-AZURE_OPENAI_API_KEY = 'f2a7a10f1807436c9412ff477469decf'
+
 SERVICE_NAME = 'vanna-search'
-# ADMIN_KEY='EM3AgQnBBsLon6kOOYxnVEpLhzHrHhj3X2feGDtkxTAzSeBkpMcv'
 INDEX_NAME = 'vanna-index'
 API_VERSION = '2020-06-30'
 url = f"https://{SERVICE_NAME}.search.windows.net/indexes/{INDEX_NAME}?api-version={API_VERSION}"
@@ -29,10 +27,32 @@ service_name = 'vanna-search'
 ADMIN_KEY = 'EM3AgQnBBsLon6kOOYxnVEpLhzHrHhj3X2feGDtkxTAzSeBkpMcv'
 api_version = "2020-06-30"
 
+AZURE_OPENAI_ENDPOINT = 'https://embedding-openai-alpha.openai.azure.com/'
+AZURE_OPENAI_API_KEY = 'f2a7a10f1807436c9412ff477469decf'
+class AzureAISearch(VannaBase):
 
-class AzureAISearch():
+    def __init__(self, client=None, config=None):
+        VannaBase.__init__(self, config=config)
 
-    def generate_embeddings(self, text, model="text-embedding-ada-002"): # model = "deployment_name"
+        # default parameters - can be overrided using config
+        self.temperature = 0.7
+        self.max_tokens = 500
+
+        if client is not None:
+            self.client = client
+            return
+
+        if config is None and client is None:
+            self.client = AzureOpenAI(
+                api_key=AZURE_OPENAI_API_KEY,
+                api_version="2023-05-15",
+                azure_endpoint=AZURE_OPENAI_ENDPOINT
+            )
+            return
+
+        if "api_key" in config:
+            self.client = AzureOpenAI(api_key=config["api_key"])
+    def generate_embedding(self, text, model="text-embedding-ada-002"): # model = "deployment_name"
         client = AzureOpenAI(
             api_key=AZURE_OPENAI_API_KEY,
             api_version="2023-05-15",
@@ -357,7 +377,7 @@ class AzureAISearch():
 
         return documents
 
-    def get_similar_question_sql(self, question: str, top_n, **kwargs) -> List[dict]:
+    def get_similar_question_sql(self, question: str,  **kwargs) -> List[dict]:
         """
         Get similar questions based on the provided question using Azure AI Search.
 
@@ -374,13 +394,22 @@ class AzureAISearch():
                                          index_name=index_name,
                                          credential=AzureKeyCredential(ADMIN_KEY))
 
-        results = search_client_sql.search(search_text=question,
+        search_results = search_client_sql.search(search_text=question,
                                            select="*",
-                                           top=top_n)
+                                           top=3)
 
-        return results
+        # Initialize an empty list to hold the results
+        results_list = []
 
-    def get_related_ddl(self, question: str, top_n, **kwargs) -> List[dict]:
+        # Iterate over the search results and add each result to the list
+        for result in search_results:
+            # Convert the result to a dictionary and append it to the results_list
+            results_list.append(dict(result))
+
+        # Return the populated list of results
+        return results_list
+
+    def get_related_ddl(self, question: str,  **kwargs) -> List[dict]:
         """
         Get related DDL based on the provided question using Azure AI Search.
 
@@ -397,13 +426,22 @@ class AzureAISearch():
                                          index_name=index_ddl,
                                          credential=AzureKeyCredential(ADMIN_KEY))
 
-        results = search_client_ddl.search(search_text=question,
+        search_results = search_client_ddl.search(search_text=question,
                                            select="*",
-                                           top=top_n)
+                                           top=3)
 
-        return results
+        # Initialize an empty list to hold the results
+        results_list = []
 
-    def get_related_documentation(self, question: str, top_n, **kwargs) -> List[dict]:
+        # Iterate over the search results and add each result to the list
+        for result in search_results:
+            # Convert the result to a dictionary and append it to the results_list
+            results_list.append(dict(result))
+
+        # Return the populated list of results
+        return results_list
+
+    def get_related_documentation(self, question: str, **kwargs) -> List[dict]:
         """
         Get related documentation based on the provided question using Azure AI Search.
 
@@ -420,11 +458,83 @@ class AzureAISearch():
                                          index_name=index_doc,
                                          credential=AzureKeyCredential(ADMIN_KEY))
 
-        results = search_client_doc.search(search_text=question,
+        search_results = search_client_doc.search(search_text=question,
                                            select="*",
-                                           top=top_n)
+                                           top=3)
 
-        return results
+        # Initialize an empty list to hold the results
+        results_list = []
+
+        # Iterate over the search results and add each result to the list
+        for result in search_results:
+            # Convert the result to a dictionary and append it to the results_list
+            results_list.append(dict(result))
+
+        # Return the populated list of results
+        return results_list
+
+    def system_message(self, message: str) -> any:
+        return {"role": "system", "content": message}
+
+    def user_message(self, message: str) -> any:
+        return {"role": "user", "content": message}
+
+    def assistant_message(self, message: str) -> any:
+        return {"role": "assistant", "content": message}
+
+    def submit_prompt(self, prompt, **kwargs) -> str:
+        if prompt is None:
+            raise Exception("Prompt is None")
+
+        if len(prompt) == 0:
+            raise Exception("Prompt is empty")
+
+        # Count the number of tokens in the message log
+        # Use 4 as an approximation for the number of characters per token
+        num_tokens = 0
+        for message in prompt:
+            num_tokens += len(message["content"]) / 4
+
+        if num_tokens > 3500:
+            model = "gpt-35-turbo"
+        else:
+            model = "gpt-35-turbo"
+
+        # print(f"Using model {model} for {num_tokens} tokens (approx)")
+        response = self.client.chat.completions.create(
+            model=model,
+            messages=prompt,
+            max_tokens=self.max_tokens,
+            stop=None,
+            temperature=self.temperature,
+        )
+        # print('response:')
+        # print(response)
+        # Find the first response from the chatbot that has text in it (some responses may not have text)
+        for choice in response.choices:
+            if "text" in choice:
+                # print(choice.text)
+                return choice.text
+        # If no response with text is found, return the first response's content (which may be empty)
+        return response.choices[0].message.content
+
+    def getconn(self):
+        connector = Connector()
+        conn = connector.connect(
+            INSTANCE_CONNECTION_NAME,
+            "pg8000",
+            user=DB_USER,
+            password=DB_PASS,
+            db=DB_NAME
+        )
+        return conn
+    def execute_query(self, query, conn):
+        engine = sqlalchemy.create_engine(
+            "postgresql+pg8000://",
+            creator=lambda: conn,  # Pass the connection object directly
+        )
+        return pd.read_sql_query(query, engine)
+
 
 if __name__ == "__main__":
     # print(AZURE_OPENAI_ENDPOINT)
@@ -437,9 +547,10 @@ if __name__ == "__main__":
     # azure_ai_search.add_documentation('This table contains the information about the employees in a company, it has multiple columns namely, emp_id, title of the employee, and his salary')
     # print(azure_ai_search.get_training_data())
     # azure_ai_search.remove_training_data('7122598d-95b8-4ac6-b08f-be6484cbbfe7-doc')
-    # similar_results = azure_ai_search.get_similar_question_sql('What is the salary for Alice Johnson', 2)
-    # similar_results = azure_ai_search.get_related_ddl('create table', 2)
-    # similar_results = azure_ai_search.get_related_documentation('This table contain employee data', 2)
+    # similar_results = azure_ai_search.get_similar_question_sql('What is the salary for Alice Johnson')
+    # similar_results = azure_ai_search.get_related_ddl('create table')
+    similar_results = azure_ai_search.get_related_documentation('This table contain employee data')
+    print(similar_results)
     # for result in similar_results:
     #     print(result)
     # df = azure_ai_search.preprocessing_tables(table)

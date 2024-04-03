@@ -68,9 +68,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 
-from ..exceptions import DependencyError, ImproperlyConfigured, ValidationError
-from ..types import TrainingPlan, TrainingPlanItem
-from ..utils import validate_config_path
+# from exceptions import DependencyError, ImproperlyConfigured, ValidationError
+# from types import TrainingPlan, TrainingPlanItem
+# from utils import validate_config_path
 
 
 class VannaBase(ABC):
@@ -108,9 +108,12 @@ class VannaBase(ABC):
         Returns:
             str: The SQL query that answers the question.
         """
-        question_sql_list = self.get_similar_question_sql(question, **kwargs)
+        question_sql_list = self.get_similar_question_sql(question,  **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
+        # print(question_sql_list)
+        # print(ddl_list)
+        # print(doc_list)
         prompt = self.get_sql_prompt(
             question=question,
             question_sql_list=question_sql_list,
@@ -118,9 +121,9 @@ class VannaBase(ABC):
             doc_list=doc_list,
             **kwargs,
         )
-        self.log(prompt)
+        # self.log(prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
-        self.log(llm_response)
+        # self.log(llm_response)
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:
@@ -1203,60 +1206,60 @@ class VannaBase(ABC):
                 return sql, None, None
         return sql, df, None
 
-    def train(
-        self,
-        question: str = None,
-        sql: str = None,
-        ddl: str = None,
-        documentation: str = None,
-        plan: TrainingPlan = None,
-    ) -> str:
-        """
-        **Example:**
-        ```python
-        vn.train()
-        ```
-
-        Train Vanna.AI on a question and its corresponding SQL query.
-        If you call it with no arguments, it will check if you connected to a database and it will attempt to train on the metadata of that database.
-        If you call it with the sql argument, it's equivalent to [`vn.add_question_sql()`][vanna.base.base.VannaBase.add_question_sql].
-        If you call it with the ddl argument, it's equivalent to [`vn.add_ddl()`][vanna.base.base.VannaBase.add_ddl].
-        If you call it with the documentation argument, it's equivalent to [`vn.add_documentation()`][vanna.base.base.VannaBase.add_documentation].
-        Additionally, you can pass a [`TrainingPlan`][vanna.types.TrainingPlan] object. Get a training plan with [`vn.get_training_plan_generic()`][vanna.base.base.VannaBase.get_training_plan_generic].
-
-        Args:
-            question (str): The question to train on.
-            sql (str): The SQL query to train on.
-            ddl (str):  The DDL statement.
-            documentation (str): The documentation to train on.
-            plan (TrainingPlan): The training plan to train on.
-        """
-
-        if question and not sql:
-            raise ValidationError(f"Please also provide a SQL query")
-
-        if documentation:
-            print("Adding documentation....")
-            return self.add_documentation(documentation)
-
-        if sql:
-            if question is None:
-                question = self.generate_question(sql)
-                print("Question generated with sql:", question, "\nAdding SQL...")
-            return self.add_question_sql(question=question, sql=sql)
-
-        if ddl:
-            print("Adding ddl:", ddl)
-            return self.add_ddl(ddl)
-
-        if plan:
-            for item in plan._plan:
-                if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
-                    self.add_ddl(item.item_value)
-                elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
-                    self.add_documentation(item.item_value)
-                elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
-                    self.add_question_sql(question=item.item_name, sql=item.item_value)
+    # def train(
+    #     self,
+    #     question: str = None,
+    #     sql: str = None,
+    #     ddl: str = None,
+    #     documentation: str = None,
+    #     plan: TrainingPlan = None,
+    # ) -> str:
+    #     """
+    #     **Example:**
+    #     ```python
+    #     vn.train()
+    #     ```
+    #
+    #     Train Vanna.AI on a question and its corresponding SQL query.
+    #     If you call it with no arguments, it will check if you connected to a database and it will attempt to train on the metadata of that database.
+    #     If you call it with the sql argument, it's equivalent to [`vn.add_question_sql()`][vanna.base.base.VannaBase.add_question_sql].
+    #     If you call it with the ddl argument, it's equivalent to [`vn.add_ddl()`][vanna.base.base.VannaBase.add_ddl].
+    #     If you call it with the documentation argument, it's equivalent to [`vn.add_documentation()`][vanna.base.base.VannaBase.add_documentation].
+    #     Additionally, you can pass a [`TrainingPlan`][vanna.types.TrainingPlan] object. Get a training plan with [`vn.get_training_plan_generic()`][vanna.base.base.VannaBase.get_training_plan_generic].
+    #
+    #     Args:
+    #         question (str): The question to train on.
+    #         sql (str): The SQL query to train on.
+    #         ddl (str):  The DDL statement.
+    #         documentation (str): The documentation to train on.
+    #         plan (TrainingPlan): The training plan to train on.
+    #     """
+    #
+    #     if question and not sql:
+    #         raise ValidationError(f"Please also provide a SQL query")
+    #
+    #     if documentation:
+    #         print("Adding documentation....")
+    #         return self.add_documentation(documentation)
+    #
+    #     if sql:
+    #         if question is None:
+    #             question = self.generate_question(sql)
+    #             print("Question generated with sql:", question, "\nAdding SQL...")
+    #         return self.add_question_sql(question=question, sql=sql)
+    #
+    #     if ddl:
+    #         print("Adding ddl:", ddl)
+    #         return self.add_ddl(ddl)
+    #
+    #     if plan:
+    #         for item in plan._plan:
+    #             if item.item_type == TrainingPlanItem.ITEM_TYPE_DDL:
+    #                 self.add_ddl(item.item_value)
+    #             elif item.item_type == TrainingPlanItem.ITEM_TYPE_IS:
+    #                 self.add_documentation(item.item_value)
+    #             elif item.item_type == TrainingPlanItem.ITEM_TYPE_SQL:
+    #                 self.add_question_sql(question=item.item_name, sql=item.item_value)
 
     def _get_databases(self) -> List[str]:
         try:
@@ -1278,205 +1281,205 @@ class VannaBase(ABC):
 
         return df_tables
 
-    def get_training_plan_generic(self, df) -> TrainingPlan:
-        """
-        This method is used to generate a training plan from an information schema dataframe.
+    # def get_training_plan_generic(self, df) -> TrainingPlan:
+    #     """
+    #     This method is used to generate a training plan from an information schema dataframe.
+    #
+    #     Basically what it does is breaks up INFORMATION_SCHEMA.COLUMNS into groups of table/column descriptions that can be used to pass to the LLM.
+    #
+    #     Args:
+    #         df (pd.DataFrame): The dataframe to generate the training plan from.
+    #
+    #     Returns:
+    #         TrainingPlan: The training plan.
+    #     """
+    #     # For each of the following, we look at the df columns to see if there's a match:
+    #     database_column = df.columns[
+    #         df.columns.str.lower().str.contains("database")
+    #         | df.columns.str.lower().str.contains("table_catalog")
+    #     ].to_list()[0]
+    #     schema_column = df.columns[
+    #         df.columns.str.lower().str.contains("table_schema")
+    #     ].to_list()[0]
+    #     table_column = df.columns[
+    #         df.columns.str.lower().str.contains("table_name")
+    #     ].to_list()[0]
+    #     column_column = df.columns[
+    #         df.columns.str.lower().str.contains("column_name")
+    #     ].to_list()[0]
+    #     data_type_column = df.columns[
+    #         df.columns.str.lower().str.contains("data_type")
+    #     ].to_list()[0]
+    #
+    #     plan = TrainingPlan([])
+    #
+    #     for database in df[database_column].unique().tolist():
+    #         for schema in (
+    #             df.query(f'{database_column} == "{database}"')[schema_column]
+    #             .unique()
+    #             .tolist()
+    #         ):
+    #             for table in (
+    #                 df.query(
+    #                     f'{database_column} == "{database}" and {schema_column} == "{schema}"'
+    #                 )[table_column]
+    #                 .unique()
+    #                 .tolist()
+    #             ):
+    #                 df_columns_filtered_to_table = df.query(
+    #                     f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
+    #                 )
+    #                 doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+    #                 doc += df_columns_filtered_to_table[
+    #                     [
+    #                         database_column,
+    #                         schema_column,
+    #                         table_column,
+    #                         column_column,
+    #                         data_type_column,
+    #                     ]
+    #                 ].to_markdown()
+    #
+    #                 plan._plan.append(
+    #                     TrainingPlanItem(
+    #                         item_type=TrainingPlanItem.ITEM_TYPE_IS,
+    #                         item_group=f"{database}.{schema}",
+    #                         item_name=table,
+    #                         item_value=doc,
+    #                     )
+    #                 )
+    #
+    #     return plan
 
-        Basically what it does is breaks up INFORMATION_SCHEMA.COLUMNS into groups of table/column descriptions that can be used to pass to the LLM.
-
-        Args:
-            df (pd.DataFrame): The dataframe to generate the training plan from.
-
-        Returns:
-            TrainingPlan: The training plan.
-        """
-        # For each of the following, we look at the df columns to see if there's a match:
-        database_column = df.columns[
-            df.columns.str.lower().str.contains("database")
-            | df.columns.str.lower().str.contains("table_catalog")
-        ].to_list()[0]
-        schema_column = df.columns[
-            df.columns.str.lower().str.contains("table_schema")
-        ].to_list()[0]
-        table_column = df.columns[
-            df.columns.str.lower().str.contains("table_name")
-        ].to_list()[0]
-        column_column = df.columns[
-            df.columns.str.lower().str.contains("column_name")
-        ].to_list()[0]
-        data_type_column = df.columns[
-            df.columns.str.lower().str.contains("data_type")
-        ].to_list()[0]
-
-        plan = TrainingPlan([])
-
-        for database in df[database_column].unique().tolist():
-            for schema in (
-                df.query(f'{database_column} == "{database}"')[schema_column]
-                .unique()
-                .tolist()
-            ):
-                for table in (
-                    df.query(
-                        f'{database_column} == "{database}" and {schema_column} == "{schema}"'
-                    )[table_column]
-                    .unique()
-                    .tolist()
-                ):
-                    df_columns_filtered_to_table = df.query(
-                        f'{database_column} == "{database}" and {schema_column} == "{schema}" and {table_column} == "{table}"'
-                    )
-                    doc = f"The following columns are in the {table} table in the {database} database:\n\n"
-                    doc += df_columns_filtered_to_table[
-                        [
-                            database_column,
-                            schema_column,
-                            table_column,
-                            column_column,
-                            data_type_column,
-                        ]
-                    ].to_markdown()
-
-                    plan._plan.append(
-                        TrainingPlanItem(
-                            item_type=TrainingPlanItem.ITEM_TYPE_IS,
-                            item_group=f"{database}.{schema}",
-                            item_name=table,
-                            item_value=doc,
-                        )
-                    )
-
-        return plan
-
-    def get_training_plan_snowflake(
-        self,
-        filter_databases: Union[List[str], None] = None,
-        filter_schemas: Union[List[str], None] = None,
-        include_information_schema: bool = False,
-        use_historical_queries: bool = True,
-    ) -> TrainingPlan:
-        plan = TrainingPlan([])
-
-        if self.run_sql_is_set is False:
-            raise ImproperlyConfigured("Please connect to a database first.")
-
-        if use_historical_queries:
-            try:
-                print("Trying query history")
-                df_history = self.run_sql(
-                    """ select * from table(information_schema.query_history(result_limit => 5000)) order by start_time"""
-                )
-
-                df_history_filtered = df_history.query("ROWS_PRODUCED > 1")
-                if filter_databases is not None:
-                    mask = (
-                        df_history_filtered["QUERY_TEXT"]
-                        .str.lower()
-                        .apply(
-                            lambda x: any(
-                                s in x for s in [s.lower() for s in filter_databases]
-                            )
-                        )
-                    )
-                    df_history_filtered = df_history_filtered[mask]
-
-                if filter_schemas is not None:
-                    mask = (
-                        df_history_filtered["QUERY_TEXT"]
-                        .str.lower()
-                        .apply(
-                            lambda x: any(
-                                s in x for s in [s.lower() for s in filter_schemas]
-                            )
-                        )
-                    )
-                    df_history_filtered = df_history_filtered[mask]
-
-                if len(df_history_filtered) > 10:
-                    df_history_filtered = df_history_filtered.sample(10)
-
-                for query in df_history_filtered["QUERY_TEXT"].unique().tolist():
-                    plan._plan.append(
-                        TrainingPlanItem(
-                            item_type=TrainingPlanItem.ITEM_TYPE_SQL,
-                            item_group="",
-                            item_name=self.generate_question(query),
-                            item_value=query,
-                        )
-                    )
-
-            except Exception as e:
-                print(e)
-
-        databases = self._get_databases()
-
-        for database in databases:
-            if filter_databases is not None and database not in filter_databases:
-                continue
-
-            try:
-                df_tables = self._get_information_schema_tables(database=database)
-
-                print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
-                df_columns = self.run_sql(
-                    f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS"
-                )
-
-                for schema in df_tables["TABLE_SCHEMA"].unique().tolist():
-                    if filter_schemas is not None and schema not in filter_schemas:
-                        continue
-
-                    if (
-                        not include_information_schema
-                        and schema == "INFORMATION_SCHEMA"
-                    ):
-                        continue
-
-                    df_columns_filtered_to_schema = df_columns.query(
-                        f"TABLE_SCHEMA == '{schema}'"
-                    )
-
-                    try:
-                        tables = (
-                            df_columns_filtered_to_schema["TABLE_NAME"]
-                            .unique()
-                            .tolist()
-                        )
-
-                        for table in tables:
-                            df_columns_filtered_to_table = (
-                                df_columns_filtered_to_schema.query(
-                                    f"TABLE_NAME == '{table}'"
-                                )
-                            )
-                            doc = f"The following columns are in the {table} table in the {database} database:\n\n"
-                            doc += df_columns_filtered_to_table[
-                                [
-                                    "TABLE_CATALOG",
-                                    "TABLE_SCHEMA",
-                                    "TABLE_NAME",
-                                    "COLUMN_NAME",
-                                    "DATA_TYPE",
-                                    "COMMENT",
-                                ]
-                            ].to_markdown()
-
-                            plan._plan.append(
-                                TrainingPlanItem(
-                                    item_type=TrainingPlanItem.ITEM_TYPE_IS,
-                                    item_group=f"{database}.{schema}",
-                                    item_name=table,
-                                    item_value=doc,
-                                )
-                            )
-
-                    except Exception as e:
-                        print(e)
-                        pass
-            except Exception as e:
-                print(e)
-
-        return plan
+    # def get_training_plan_snowflake(
+    #     self,
+    #     filter_databases: Union[List[str], None] = None,
+    #     filter_schemas: Union[List[str], None] = None,
+    #     include_information_schema: bool = False,
+    #     use_historical_queries: bool = True,
+    # ) -> TrainingPlan:
+    #     plan = TrainingPlan([])
+    #
+    #     if self.run_sql_is_set is False:
+    #         raise ImproperlyConfigured("Please connect to a database first.")
+    #
+    #     if use_historical_queries:
+    #         try:
+    #             print("Trying query history")
+    #             df_history = self.run_sql(
+    #                 """ select * from table(information_schema.query_history(result_limit => 5000)) order by start_time"""
+    #             )
+    #
+    #             df_history_filtered = df_history.query("ROWS_PRODUCED > 1")
+    #             if filter_databases is not None:
+    #                 mask = (
+    #                     df_history_filtered["QUERY_TEXT"]
+    #                     .str.lower()
+    #                     .apply(
+    #                         lambda x: any(
+    #                             s in x for s in [s.lower() for s in filter_databases]
+    #                         )
+    #                     )
+    #                 )
+    #                 df_history_filtered = df_history_filtered[mask]
+    #
+    #             if filter_schemas is not None:
+    #                 mask = (
+    #                     df_history_filtered["QUERY_TEXT"]
+    #                     .str.lower()
+    #                     .apply(
+    #                         lambda x: any(
+    #                             s in x for s in [s.lower() for s in filter_schemas]
+    #                         )
+    #                     )
+    #                 )
+    #                 df_history_filtered = df_history_filtered[mask]
+    #
+    #             if len(df_history_filtered) > 10:
+    #                 df_history_filtered = df_history_filtered.sample(10)
+    #
+    #             for query in df_history_filtered["QUERY_TEXT"].unique().tolist():
+    #                 plan._plan.append(
+    #                     TrainingPlanItem(
+    #                         item_type=TrainingPlanItem.ITEM_TYPE_SQL,
+    #                         item_group="",
+    #                         item_name=self.generate_question(query),
+    #                         item_value=query,
+    #                     )
+    #                 )
+    #
+    #         except Exception as e:
+    #             print(e)
+    #
+    #     databases = self._get_databases()
+    #
+    #     for database in databases:
+    #         if filter_databases is not None and database not in filter_databases:
+    #             continue
+    #
+    #         try:
+    #             df_tables = self._get_information_schema_tables(database=database)
+    #
+    #             print(f"Trying INFORMATION_SCHEMA.COLUMNS for {database}")
+    #             df_columns = self.run_sql(
+    #                 f"SELECT * FROM {database}.INFORMATION_SCHEMA.COLUMNS"
+    #             )
+    #
+    #             for schema in df_tables["TABLE_SCHEMA"].unique().tolist():
+    #                 if filter_schemas is not None and schema not in filter_schemas:
+    #                     continue
+    #
+    #                 if (
+    #                     not include_information_schema
+    #                     and schema == "INFORMATION_SCHEMA"
+    #                 ):
+    #                     continue
+    #
+    #                 df_columns_filtered_to_schema = df_columns.query(
+    #                     f"TABLE_SCHEMA == '{schema}'"
+    #                 )
+    #
+    #                 try:
+    #                     tables = (
+    #                         df_columns_filtered_to_schema["TABLE_NAME"]
+    #                         .unique()
+    #                         .tolist()
+    #                     )
+    #
+    #                     for table in tables:
+    #                         df_columns_filtered_to_table = (
+    #                             df_columns_filtered_to_schema.query(
+    #                                 f"TABLE_NAME == '{table}'"
+    #                             )
+    #                         )
+    #                         doc = f"The following columns are in the {table} table in the {database} database:\n\n"
+    #                         doc += df_columns_filtered_to_table[
+    #                             [
+    #                                 "TABLE_CATALOG",
+    #                                 "TABLE_SCHEMA",
+    #                                 "TABLE_NAME",
+    #                                 "COLUMN_NAME",
+    #                                 "DATA_TYPE",
+    #                                 "COMMENT",
+    #                             ]
+    #                         ].to_markdown()
+    #
+    #                         plan._plan.append(
+    #                             TrainingPlanItem(
+    #                                 item_type=TrainingPlanItem.ITEM_TYPE_IS,
+    #                                 item_group=f"{database}.{schema}",
+    #                                 item_name=table,
+    #                                 item_value=doc,
+    #                             )
+    #                         )
+    #
+    #                 except Exception as e:
+    #                     print(e)
+    #                     pass
+    #         except Exception as e:
+    #             print(e)
+    #
+    #     return plan
 
     def get_plotly_figure(
         self, plotly_code: str, df: pd.DataFrame, dark_mode: bool = True

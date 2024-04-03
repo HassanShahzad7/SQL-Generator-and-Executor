@@ -1,7 +1,7 @@
 import os
 import re
 
-from .exceptions import ImproperlyConfigured, ValidationError
+from exceptions import ImproperlyConfigured, ValidationError
 
 
 def validate_config_path(path):
