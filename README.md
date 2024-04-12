@@ -36,3 +36,5 @@ Standard library modules do not need installation (json, os, re, sqlite3, traceb
 
 ## To Run the project
 ```uvicorn test:app --reload```
+
+### After the Project is up and running, then use Postman to send requests and trigger the EndPoint
