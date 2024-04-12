@@ -67,6 +67,7 @@ import plotly
 import plotly.express as px
 import plotly.graph_objects as go
 import requests
+import time
 
 # from exceptions import DependencyError, ImproperlyConfigured, ValidationError
 # from types import TrainingPlan, TrainingPlanItem
@@ -108,12 +109,10 @@ class VannaBase(ABC):
         Returns:
             str: The SQL query that answers the question.
         """
+        start_time = time.time()
         question_sql_list = self.get_similar_question_sql(question,  **kwargs)
         ddl_list = self.get_related_ddl(question, **kwargs)
         doc_list = self.get_related_documentation(question, **kwargs)
-        # print(question_sql_list)
-        # print(ddl_list)
-        # print(doc_list)
         prompt = self.get_sql_prompt(
             question=question,
             question_sql_list=question_sql_list,
@@ -121,9 +120,13 @@ class VannaBase(ABC):
             doc_list=doc_list,
             **kwargs,
         )
+        print(prompt)
         # self.log(prompt)
         llm_response = self.submit_prompt(prompt, **kwargs)
         # self.log(llm_response)
+        end_time = time.time()  # Record the end time
+        execution_time = end_time - start_time
+        print(f"Generating SQL: {execution_time} seconds")
         return self.extract_sql(llm_response)
 
     def extract_sql(self, llm_response: str) -> str:

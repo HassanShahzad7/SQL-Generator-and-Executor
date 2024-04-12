@@ -8,6 +8,7 @@ import json
 from typing import List
 from openai import AzureOpenAI
 from base import VannaBase
+import time
 from dotenv import load_dotenv
 import os
 
@@ -59,17 +60,6 @@ class AzureAISearch(VannaBase):
             azure_endpoint=AZURE_OPENAI_ENDPOINT
         )
         return client.embeddings.create(input=[text], model=model).data[0].embedding
-
-    def getconn(self):
-        connector = Connector()
-        conn = connector.connect(
-            INSTANCE_CONNECTION_NAME,
-            "pg8000",
-            user=DB_USER,
-            password=DB_PASS,
-            db=DB_NAME
-        )
-        return conn
 
     def loading_tables(self, connection, table_name):
         # create connection pool with 'creator' argument to our connection object function
@@ -519,6 +509,7 @@ class AzureAISearch(VannaBase):
         return response.choices[0].message.content
 
     def getconn(self):
+        start_time = time.time()
         connector = Connector()
         conn = connector.connect(
             INSTANCE_CONNECTION_NAME,
@@ -527,12 +518,21 @@ class AzureAISearch(VannaBase):
             password=DB_PASS,
             db=DB_NAME
         )
+        end_time = time.time()  # Record the end time
+        execution_time = end_time - start_time  # Calculate total execution time
+
+        print(f"Establishing Connection took: {execution_time} seconds")
         return conn
     def execute_query(self, query, conn):
+        start_time = time.time()
         engine = sqlalchemy.create_engine(
             "postgresql+pg8000://",
             creator=lambda: conn,  # Pass the connection object directly
         )
+        end_time = time.time()  # Record the end time
+        execution_time = end_time - start_time  # Calculate total execution time
+
+        print(f"Executing Query took: {execution_time} seconds")
         return pd.read_sql_query(query, engine)
 
 
@@ -546,11 +546,11 @@ if __name__ == "__main__":
     # azure_ai_search.add_ddl('CREATE TABLE employees (name VARCHAR(255),title VARCHAR(255),salary NUMERIC);')
     # azure_ai_search.add_documentation('This table contains the information about the employees in a company, it has multiple columns namely, emp_id, title of the employee, and his salary')
     # print(azure_ai_search.get_training_data())
-    # azure_ai_search.remove_training_data('7122598d-95b8-4ac6-b08f-be6484cbbfe7-doc')
+    azure_ai_search.remove_training_data("bb2694fe-5670-40a4-afd4-c8ff42275715-ddl")
     # similar_results = azure_ai_search.get_similar_question_sql('What is the salary for Alice Johnson')
     # similar_results = azure_ai_search.get_related_ddl('create table')
-    similar_results = azure_ai_search.get_related_documentation('This table contain employee data')
-    print(similar_results)
+    # similar_results = azure_ai_search.get_related_documentation('This table contain employee data')
+    # print(similar_results)
     # for result in similar_results:
     #     print(result)
     # df = azure_ai_search.preprocessing_tables(table)
