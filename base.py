@@ -68,6 +68,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import requests
 import time
+from collections import Counter
 
 # from exceptions import DependencyError, ImproperlyConfigured, ValidationError
 # from types import TrainingPlan, TrainingPlanItem
@@ -83,7 +84,7 @@ class VannaBase(ABC):
     def log(self, message: str):
         print(message)
 
-    def generate_sql(self, question: str, **kwargs) -> str:
+    def generate_sql(self, question: str, org_id:str, **kwargs) -> tuple:
         """
         Example:
         ```python
@@ -110,14 +111,29 @@ class VannaBase(ABC):
             str: The SQL query that answers the question.
         """
         start_time = time.time()
-        question_sql_list = self.get_similar_question_sql(question,  **kwargs)
-        ddl_list = self.get_related_ddl(question, **kwargs)
-        doc_list = self.get_related_documentation(question, **kwargs)
+        question_sql_list = self.get_similar_question_sql(question, org_id, **kwargs)
+        ddl_list = self.get_related_ddl(question, org_id, **kwargs)
+        doc_list = self.get_related_documentation(question, org_id, **kwargs)
+
+        db_name_1 = [entry['database_name'] for entry in question_sql_list]
+        db_name_2 = [entry['database_name'] for entry in ddl_list]
+        db_name_3 = [entry['database_name'] for entry in doc_list]
+        db_list = db_name_1 + db_name_2 + db_name_3
+        print(db_list)
+
+        # Use Counter to count occurrences of each element
+        counter = Counter(db_list)
+
+        # Find the most common element
+        most_common_element, most_common_count = counter.most_common(1)[0]  # This returns a list of the n most common elements and their counts
+        print(most_common_element, most_common_count)
+
         prompt = self.get_sql_prompt(
             question=question,
             question_sql_list=question_sql_list,
             ddl_list=ddl_list,
             doc_list=doc_list,
+            db_name=most_common_element,
             **kwargs,
         )
         print(prompt)
@@ -127,7 +143,7 @@ class VannaBase(ABC):
         end_time = time.time()  # Record the end time
         execution_time = end_time - start_time
         print(f"Generating SQL: {execution_time} seconds")
-        return self.extract_sql(llm_response)
+        return (self.extract_sql(llm_response), most_common_element)
 
     def extract_sql(self, llm_response: str) -> str:
         # If the llm_response contains a markdown code block, with or without the sql tag, extract the sql from it
@@ -235,39 +251,39 @@ class VannaBase(ABC):
 
     # ----------------- Use Any Database to Store and Retrieve Context ----------------- #
     @abstractmethod
-    def get_similar_question_sql(self, question: str, **kwargs) -> list:
+    def get_similar_question_sql(self, question: str, org_id: str, **kwargs) -> list:
         """
         This method is used to get similar questions and their corresponding SQL statements.
 
         Args:
             question (str): The question to get similar questions and their corresponding SQL statements for.
-
+            org_id(str): The unique id for each organization to filter out organization's data
         Returns:
             list: A list of similar questions and their corresponding SQL statements.
         """
         pass
 
     @abstractmethod
-    def get_related_ddl(self, question: str, **kwargs) -> list:
+    def get_related_ddl(self, question: str, org_id: str, **kwargs) -> list:
         """
         This method is used to get related DDL statements to a question.
 
         Args:
             question (str): The question to get related DDL statements for.
-
+            org_id(str): The unique id for each organization to filter out organization's data
         Returns:
             list: A list of related DDL statements.
         """
         pass
 
     @abstractmethod
-    def get_related_documentation(self, question: str, **kwargs) -> list:
+    def get_related_documentation(self, question: str, org_id: str, **kwargs) -> list:
         """
         This method is used to get related documentation to a question.
 
         Args:
             question (str): The question to get related documentation for.
-
+            org_id(str): The unique id for each organization to filter out organization's data
         Returns:
             list: A list of related documentation.
         """
@@ -420,6 +436,7 @@ class VannaBase(ABC):
         question_sql_list: list,
         ddl_list: list,
         doc_list: list,
+        db_name: str,
         **kwargs,
     ):
         """
@@ -446,7 +463,7 @@ class VannaBase(ABC):
             any: The prompt for the LLM to generate SQL.
         """
         initial_prompt = "The user provides a question and you provide SQL. You will only respond with SQL code and not with any explanations.\n\nRespond with only SQL code. Do not answer with any explanations -- just the code.\n"
-
+        # Update the initial prompt to include the most common database
         initial_prompt = self.add_ddl_to_prompt(
             initial_prompt, ddl_list, max_tokens=14000
         )
