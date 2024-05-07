@@ -527,9 +527,10 @@ class AzureAISearch(VannaBase):
         search_results = search_client_sql.search(search_text=question,
                                             select="*",
                                             filter=filter_query,
-                                            # query_type='full',  # Enables full query capabilities
+                                            query_type='semantic',  # Enables full query capabilities
+                                            semantic_configuration_name = 'semantic_sql',
                                             # search_mode='all', # Hybrid search: uses both keyword and semantic search
-                                            top=2)
+                                            top=3)
 
         # Initialize an empty list to hold the results
         results_list = []
@@ -567,9 +568,10 @@ class AzureAISearch(VannaBase):
         search_results = search_client_ddl.search(search_text=question,
                                             select="*",
                                             filter=filter_query,
-                                            # query_type='full',  # Enables full query capabilities
+                                            query_type='simple',  # Enables full query capabilities
+                                            semantic_configuration_name='semantic_ddl',
                                             # search_mode='all',
-                                            top=2)
+                                            top=3)
 
         # Initialize an empty list to hold the results
         results_list = []
@@ -607,9 +609,10 @@ class AzureAISearch(VannaBase):
         search_results = search_client_doc.search(search_text=question,
                                             select="*",
                                             filter=filter_query,
-                                            # query_type='full',  # Enables full query capabilities
+                                            query_type='simple',  # Enables full query capabilities
+                                            semantic_configuration_name='semantic_doc',
                                             # search_mode='all',
-                                            top=2)
+                                            top=3)
 
         # Initialize an empty list to hold the results
         results_list = []
