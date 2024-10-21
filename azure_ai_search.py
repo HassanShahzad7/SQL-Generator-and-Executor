@@ -11,19 +11,19 @@ from openai import AzureOpenAI
 from base import VannaBase
 import time
 
-SERVICE_NAME = 'vanna-search'
-INDEX_NAME = 'vanna-index'
-API_VERSION = '2020-06-30'
+SERVICE_NAME = 'xxx'
+INDEX_NAME = 'xxx'
+API_VERSION = 'xxx'
 url = f"https://{SERVICE_NAME}.search.windows.net/indexes/{INDEX_NAME}?api-version={API_VERSION}"
 
 search_endpoint = f"https://{SERVICE_NAME}.search.windows.net/"
 
 service_name = 'vanna-search'
-ADMIN_KEY = 'EM3AgQnBBsLon6kOOYxnVEpLhzHrHhj3X2feGDtkxTAzSeBkpMcv'
-api_version = "2020-06-30"
+ADMIN_KEY = 'xxx'
+api_version = "xxxx"
 
-AZURE_OPENAI_ENDPOINT = 'https://embedding-openai-alpha.openai.azure.com/'
-AZURE_OPENAI_API_KEY = 'f2a7a10f1807436c9412ff477469decf'
+AZURE_OPENAI_ENDPOINT = 'xxx'
+AZURE_OPENAI_API_KEY = 'xxx'
 class AzureAISearch(VannaBase):
 
     def __init__(self, client=None, config=None):
