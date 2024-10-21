@@ -7,6 +7,7 @@ from fastapi.encoders import jsonable_encoder
 # Instantiating FastAPI
 app = FastAPI()
 
+
 # Creating a Pydantic Model to validate the data type of the column
 class Query(BaseModel):
     db_id: str
@@ -14,8 +15,10 @@ class Query(BaseModel):
     org_id: str
     query: str
 
+
 class Generate(BaseModel):
     query: str
+
 
 class SQL(BaseModel):
     db_id: str
@@ -23,6 +26,7 @@ class SQL(BaseModel):
     org_id: str
     question: str
     sql: str
+
 
 # Root endpoint if no path is specified
 @app.get("/")
@@ -51,6 +55,7 @@ async def generate_sql(query: Generate):
     response = jsonable_encoder({'data': {'Query': sql_query, 'Results': results_list}})
     return response
 
+
 @app.post("/add-sql/")
 async def add_sql(query: SQL):
     vanna = AzureAISearch()
@@ -58,12 +63,14 @@ async def add_sql(query: SQL):
     vanna.add_question_sql(query.db_id, query.db_name, query.org_id, query.question, query.sql)
     return {"message": "SQL has been added successfully"}
 
+
 @app.post("/add-ddl/")
 async def add_ddl(query: Query):
     vanna = AzureAISearch()
     # Adding DDL data to the vector storage
     vanna.add_ddl(query.db_id, query.db_name, query.org_id, query.query)
     return {"message": "DDL has been added successfully"}
+
 
 @app.post("/add-doc/")
 async def add_doc(query: Query):
