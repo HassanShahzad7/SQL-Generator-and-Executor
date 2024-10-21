@@ -10,20 +10,25 @@ from typing import List
 from openai import AzureOpenAI
 from base import VannaBase
 import time
+import os
+from dotenv import load_dotenv
 
-SERVICE_NAME = 'xxx'
-INDEX_NAME = 'xxx'
-API_VERSION = 'xxx'
+load_dotenv()
+
+# Access environment variables
+SERVICE_NAME = os.getenv('SERVICE_NAME')
+INDEX_NAME = os.getenv('INDEX_NAME')
+API_VERSION = os.getenv('API_VERSION')
 url = f"https://{SERVICE_NAME}.search.windows.net/indexes/{INDEX_NAME}?api-version={API_VERSION}"
 
-search_endpoint = f"https://{SERVICE_NAME}.search.windows.net/"
+search_endpoint = os.getenv('SEARCH_ENDPOINT')
 
-service_name = 'vanna-search'
-ADMIN_KEY = 'xxx'
-api_version = "xxxx"
+service_name = SERVICE_NAME
+ADMIN_KEY = os.getenv('ADMIN_KEY')
+api_version = API_VERSION
 
-AZURE_OPENAI_ENDPOINT = 'xxx'
-AZURE_OPENAI_API_KEY = 'xxx'
+AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
+AZURE_OPENAI_API_KEY = os.getenv('AZURE_OPENAI_API_KEY')
 class AzureAISearch(VannaBase):
 
     def __init__(self, client=None, config=None):
